@@ -3,22 +3,135 @@
 import type { CSSProperties } from "react";
 import type { SettingsPanelState } from "../types";
 
+const SETTING_GROUPS = [
+  { title: "Account", description: "Profile and identity settings", fields: ["Display name", "Workspace slug", "Contact email"] },
+  { title: "Notifications", description: "Delivery and alert preferences", fields: ["Product updates", "Security alerts", "Weekly digest"] },
+  { title: "Privacy", description: "Visibility and data controls", fields: ["Public profile", "Usage analytics", "Data retention"] },
+  { title: "Billing", description: "Invoices and payment settings", fields: ["Plan", "Invoice email", "Spend alerts"] },
+  { title: "Integrations", description: "Connected app permissions", fields: ["API access", "Webhook endpoint", "Sync cadence"] },
+  { title: "Advanced", description: "Administrative defaults", fields: ["Default role", "Session timeout", "Beta access"] },
+];
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function resolveStatus(state: SettingsPanelState) {
+  if (state.previewState === "error" || state.saveState === "error") {
+    return { role: "alert", text: "Unable to save settings. Review the highlighted fields and try again.", color: "#fca5a5" };
+  }
+  if (state.previewState === "success" || state.saveState === "success") {
+    return { role: "status", text: "Settings saved successfully.", color: "#86efac" };
+  }
+  if (state.previewState === "loading" || state.saveState === "saving") {
+    return { role: "status", text: "Saving settings...", color: state.accent };
+  }
+  if (state.dirtyState) {
+    return { role: "status", text: "Unsaved changes are ready to save.", color: state.accent };
+  }
+  return { role: "status", text: "Settings are up to date.", color: state.muted };
+}
+
 function shell(state: SettingsPanelState): CSSProperties {
-  return { width: state.width, minHeight: state.height, padding: state.padding, gap: state.gap, borderRadius: state.radius, border: `${state.borderWidth}px solid ${state.border}`, boxShadow: `0 ${Math.round(state.shadow / 3)}px ${state.shadow}px rgba(0,0,0,.28)`, background: state.background, color: state.foreground, fontFamily: state.fontFamily, opacity: state.disabled ? 0.55 : 1 };
+  return {
+    width: state.width,
+    minHeight: state.height,
+    display: "grid",
+    gap: state.gap,
+    padding: state.padding,
+    borderRadius: state.radius,
+    border: `${state.borderWidth}px solid ${state.border}`,
+    boxShadow: `0 ${Math.round(state.shadow / 3)}px ${state.shadow}px rgba(15, 23, 42, 0.26)`,
+    background: state.background,
+    color: state.foreground,
+    fontFamily: state.fontFamily,
+    opacity: state.disabled ? 0.58 : 1,
+  };
 }
 
 export default function LivePreview({ state }: { state: SettingsPanelState }) {
-  const model = state as Record<string, unknown>;
-  const numberValue = (key: string, fallback: number) => typeof model[key] === "number" ? model[key] : fallback;
-  const stringValue = (key: string, fallback: string) => typeof model[key] === "string" ? model[key] : fallback;
-  const boolValue = (key: string) => typeof model[key] === "boolean" ? model[key] : false;
-  const count = numberValue("itemCount", numberValue("rowCount", numberValue("slideCount", numberValue("imageCount", numberValue("filterCount", numberValue("controlCount", 5))))));
-  const items = Array.from({ length: count }, (_, index) => index + 1);
-  const badge = (text: string) => <span className="rounded-full border px-3 py-1 text-xs" style={{ borderColor: state.border, color: state.accent }}>{text}</span>;
-  const panel = shell(state);
-  if ("chartType" in model) return <section role="img" aria-label={state.ariaLabel} style={panel} className="grid content-center"><h3 style={{ fontSize: state.titleSize }}>{state.title}</h3><div className="flex items-end gap-3">{items.map((item) => <div key={item} className="w-10 rounded-t-xl" style={{ height: 36 + item * 18, background: state.accent }} />)}</div></section>;
-  if ("src" in model && ("showTimeline" in model || "showCaptions" in model)) return <section role={state.role} aria-label={state.ariaLabel} style={panel} className="grid content-center"><h3>{state.title}</h3>{"showTimeline" in model ? <audio controls muted={boolValue("muted")} loop={boolValue("loop")} preload={stringValue("preload", "metadata")} className="w-full" /> : <video controls muted={boolValue("muted")} loop={boolValue("loop")} preload={stringValue("preload", "metadata")} poster={stringValue("poster", "")} className="w-full rounded-xl bg-black/40" />}</section>;
-  if (state.role === "dialog") return <div className="grid place-items-center"><section role="dialog" aria-label={state.ariaLabel} style={panel} className="grid"><h3 style={{ fontSize: state.titleSize }}>{state.title}</h3><p style={{ color: stringValue("muted", "#94a3b8") }}>{state.description}</p><div className="flex gap-2"><button type="button" className="rounded-xl px-4 py-2" style={{ background: state.accent, color: "#020617" }}>Action</button><button type="button" className="rounded-xl border px-4 py-2" style={{ borderColor: state.border }}>Cancel</button></div></section></div>;
-  if (state.role === "table") return <table role="table" aria-label={state.ariaLabel} style={panel}><caption>{stringValue("caption", state.title)}</caption><tbody>{items.map((item) => <tr key={item}><th className="p-2 text-left">Row {item}</th><td className="p-2">{state.label}</td></tr>)}</tbody></table>;
-  return <section id={state.id} role={state.role} aria-label={state.ariaLabel} tabIndex={state.tabIndex} style={panel} className="grid content-center"><h3 style={{ fontSize: state.titleSize, fontWeight: state.fontWeight }}>{state.title}</h3><p style={{ color: stringValue("muted", "#94a3b8"), fontSize: state.bodySize }}>{state.description}</p><div className="flex flex-wrap gap-2">{items.map((item) => badge(`${state.label} ${item}`))}</div><p className="text-xs" style={{ color: stringValue("muted", "#94a3b8") }}>{state.helper} · {stringValue("previewState", "default")}</p></section>;
+  const groupCount = clamp(state.groupCount, 1, SETTING_GROUPS.length);
+  const controlCount = clamp(state.controlCount, 1, 16);
+  const groups = SETTING_GROUPS.slice(0, groupCount);
+  const status = resolveStatus(state);
+  const describedBy = `${state.id}-description ${state.id}-status`;
+  const groupStyle: CSSProperties = {
+    display: "grid",
+    gap: 12,
+    margin: 0,
+    padding: 14,
+    border: `1px solid ${state.border}`,
+    borderRadius: Math.max(12, state.radius - 8),
+  };
+  const labelStyle: CSSProperties = { display: "grid", gap: 6, color: state.foreground, fontSize: state.bodySize };
+  const controlStyle: CSSProperties = {
+    width: "100%",
+    border: `1px solid ${state.border}`,
+    borderRadius: 12,
+    padding: "10px 12px",
+    background: "transparent",
+    color: state.foreground,
+  };
+
+  return (
+    <form id={state.id} role={state.role} aria-label={state.ariaLabel} aria-describedby={describedBy} style={shell(state)}>
+      <header className="grid gap-1.5">
+        <h3 style={{ margin: 0, fontSize: state.titleSize, fontWeight: state.fontWeight }}>{state.title}</h3>
+        <p id={`${state.id}-description`} style={{ margin: 0, color: state.muted, fontSize: state.bodySize }}>{state.description}</p>
+      </header>
+
+      {groups.map((group, groupIndex) => (
+        <fieldset key={group.title} style={groupStyle}>
+          <legend>{group.title}</legend>
+          <p id={`${state.id}-group-${groupIndex}-description`} style={{ margin: 0, color: state.muted, fontSize: 12 }}>{group.description}</p>
+          {group.fields.slice(0, Math.max(1, Math.ceil(controlCount / groupCount))).map((field, fieldIndex) => {
+            const fieldId = `${state.id}-${groupIndex}-${fieldIndex}`;
+            const helpId = `${fieldId}-help`;
+            const kind = (groupIndex + fieldIndex) % 3;
+
+            if (kind === 0) {
+              return (
+                <label key={field} htmlFor={fieldId} style={labelStyle}>
+                  {field}
+                  <input id={fieldId} name={field.toLowerCase().replaceAll(" ", "-")} type="text" defaultValue={fieldIndex === 0 ? state.label : ""} aria-describedby={helpId} aria-invalid={state.previewState === "error" ? "true" : undefined} disabled={state.disabled} style={controlStyle} />
+                  <span id={helpId} style={{ color: state.muted, fontSize: 12 }}>Update {field.toLowerCase()} for this settings group.</span>
+                </label>
+              );
+            }
+
+            if (kind === 1) {
+              return (
+                <label key={field} htmlFor={fieldId} style={labelStyle}>
+                  {field}
+                  <select id={fieldId} name={field.toLowerCase().replaceAll(" ", "-")} defaultValue="balanced" aria-describedby={helpId} disabled={state.disabled} style={controlStyle}>
+                    <option value="minimal">Minimal</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="strict">Strict</option>
+                  </select>
+                  <span id={helpId} style={{ color: state.muted, fontSize: 12 }}>Choose how strongly this setting should apply.</span>
+                </label>
+              );
+            }
+
+            return (
+              <label key={field} htmlFor={fieldId} className="flex items-center justify-between gap-3" style={{ fontSize: state.bodySize }}>
+                <span>
+                  <strong>{field}</strong>
+                  <small id={helpId} style={{ display: "block", color: state.muted }}>Toggle {field.toLowerCase()} for this workspace.</small>
+                </span>
+                <input id={fieldId} name={field.toLowerCase().replaceAll(" ", "-")} type="checkbox" defaultChecked={state.dirtyState} aria-describedby={helpId} disabled={state.disabled} />
+              </label>
+            );
+          })}
+        </fieldset>
+      ))}
+
+      <p id={`${state.id}-status`} role={status.role} aria-live="polite" style={{ margin: 0, color: status.color, fontSize: 13 }}>{status.text}</p>
+
+      <div className="flex flex-wrap gap-2.5">
+        <button type="submit" disabled={state.disabled || state.previewState === "loading"} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: state.accent, color: "#020617" }}>Save settings</button>
+        {state.showReset && <button type="reset" disabled={state.disabled} className="rounded-xl border px-4 py-2 text-sm" style={{ borderColor: state.border, color: state.foreground }}>Reset settings</button>}
+      </div>
+    </form>
+  );
 }
