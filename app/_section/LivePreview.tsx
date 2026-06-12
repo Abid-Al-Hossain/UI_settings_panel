@@ -62,6 +62,7 @@ export default function LivePreview({ state }: { state: SettingsPanelState }) {
     padding: 14,
     border: `1px solid ${state.border}`,
     borderRadius: Math.max(12, state.radius - 8),
+    transition: state.motion ? "opacity 0.2s ease, border-color 0.2s ease" : "none",
   };
   const labelStyle: CSSProperties = { display: "grid", gap: 6, color: state.foreground, fontSize: state.bodySize };
   const controlStyle: CSSProperties = {
@@ -114,7 +115,7 @@ export default function LivePreview({ state }: { state: SettingsPanelState }) {
             }
 
             return (
-              <label key={field} htmlFor={fieldId} className="flex items-center justify-between gap-3" style={{ fontSize: state.bodySize }}>
+              <label key={field} htmlFor={fieldId} className="flex items-center justify-between gap-3" style={{ fontSize: state.bodySize, transition: state.motion ? "background 0.15s ease, color 0.15s ease" : "none" }}>
                 <span>
                   <strong>{field}</strong>
                   <small id={helpId} style={{ display: "block", color: state.muted }}>Toggle {field.toLowerCase()} for this workspace.</small>
@@ -129,8 +130,8 @@ export default function LivePreview({ state }: { state: SettingsPanelState }) {
       <p id={`${state.id}-status`} role={status.role} aria-live="polite" style={{ margin: 0, color: status.color, fontSize: 13 }}>{status.text}</p>
 
       <div className="flex flex-wrap gap-2.5">
-        <button type="submit" disabled={state.disabled || state.previewState === "loading"} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: state.accent, color: "#020617" }}>Save settings</button>
-        {state.showReset && <button type="reset" disabled={state.disabled} className="rounded-xl border px-4 py-2 text-sm" style={{ borderColor: state.border, color: state.foreground }}>Reset settings</button>}
+        <button type="submit" disabled={state.disabled || state.previewState === "loading"} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: state.accent, color: "#020617", transition: state.motion ? "background 0.15s ease, opacity 0.15s ease" : "none" }}>Save settings</button>
+        {state.showReset && <button type="reset" disabled={state.disabled} className="rounded-xl border px-4 py-2 text-sm" style={{ borderColor: state.border, color: state.foreground, transition: state.motion ? "border-color 0.15s ease, color 0.15s ease" : "none" }}>Reset settings</button>}
       </div>
     </form>
   );
