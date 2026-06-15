@@ -59,9 +59,9 @@ function shell(state: SettingsPanelState): CSSProperties {
     gap: state.gap,
     padding: state.padding,
     borderRadius: buildRadius(state),
-    border: `${state.borderWidth}px ${state.borderStyle} ${state.border}`,
+    border: `${state.borderWidth}px ${state.borderStyle} ${state.disabled && state.disabledUseCustomColors ? state.disabledBorder : state.border}`,
     boxShadow: `${buildShadow(state)}`,
-    background: state.background,
+    background: state.disabled && state.disabledUseCustomColors ? state.disabledBg : state.background,
     color: state.foreground,
     fontFamily: resolveFont(state),
     fontStyle: state.fontStyle,
@@ -154,7 +154,7 @@ export default function LivePreview({ state }: { state: SettingsPanelState }) {
       <p id={`${state.id}-status`} role={status.role} aria-live="polite" style={{ margin: 0, color: status.color, fontSize: 13 }}>{status.text}</p>
 
       <div className="flex flex-wrap gap-2.5">
-        <button type="submit" disabled={state.disabled || state.previewState === "loading"} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: state.accent, color: "#020617", transition: state.transitionDuration > 0 ? "background 0.15s ease, opacity 0.15s ease" : "none" }}>Save settings</button>
+        <button type="submit" disabled={state.disabled || state.previewState === "loading"} className="rounded-xl px-4 py-2 text-sm font-bold" style={{ background: state.accent, color: state.actionText, transition: state.transitionDuration > 0 ? "background 0.15s ease, opacity 0.15s ease" : "none" }}>Save settings</button>
         {state.showReset && <button type="reset" disabled={state.disabled} className="rounded-xl border px-4 py-2 text-sm" style={{ borderColor: state.border, color: state.foreground, transition: state.transitionDuration > 0 ? "border-color 0.15s ease, color 0.15s ease" : "none" }}>Reset settings</button>}
       </div>
     </form>

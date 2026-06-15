@@ -1,11 +1,22 @@
 "use client";
 
 import { SectionCard } from "@/components/shared/layout/SectionCard";
+import Select from "@/components/shared/input/Select";
 import Switch from "@/components/shared/input/Switch";
 import type { SettingsPanelState } from "../types";
 
 type Props = { state: SettingsPanelState; update: <K extends keyof SettingsPanelState>(key: K, value: SettingsPanelState[K]) => void };
 
 export default function BehaviorSection({ state, update }: Props) {
-  return <SectionCard title="Behavior" subtitle="Behavior controls for native settings generation."><Switch label="Disabled" checked={state.disabled} onChange={(value) => update("disabled", value)} /></SectionCard>;
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Save State" subtitle="Simulated save lifecycle state.">
+        <Select label="Save state" value={state.saveState} options={["idle", "saving", "success", "error"]} onChange={(value) => update("saveState", value)} />
+      </SectionCard>
+      <SectionCard title="Controls" subtitle="Footer action controls.">
+        <Switch label="Show reset" checked={state.showReset} onChange={(value) => update("showReset", value)} />
+        <Switch label="Disabled" checked={state.disabled} onChange={(value) => update("disabled", value)} />
+      </SectionCard>
+    </div>
+  );
 }
