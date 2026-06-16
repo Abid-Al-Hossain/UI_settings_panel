@@ -14,9 +14,11 @@ export default function BehaviorSection({ state, update }: Props) {
         <Select label="Save state" value={state.saveState} options={["idle", "saving", "success", "error"]} onChange={(value) => update("saveState", value)} />
       </SectionCard>
       <SectionCard title="Controls" subtitle="Footer action controls.">
+      <div className="space-y-4">
         <Switch label="Show reset" checked={state.showReset} onChange={(value) => update("showReset", value)} />
         <Switch label="Disabled" checked={state.disabled} onChange={(value) => update("disabled", value)} />
-      </SectionCard>
+      </div>
+    </SectionCard>
     </div>
   );
 }
