@@ -66,7 +66,7 @@ export function buildReactCode(state: SettingsPanelState) {
     "  const controlStyle = { width: \"100%\", border: `1px solid ${state.border}`, borderRadius: 12, padding: \"10px 12px\", background: \"transparent\", color: state.foreground };",
     "",
     "  return (",
-    "    <form id={state.id} role={state.role} aria-label={state.ariaLabel} aria-describedby={describedBy} style={shellStyle}>",
+    "    <form id={state.id} role={state.role} aria-label={state.ariaLabel} aria-describedby={describedBy} onSubmit={(event) => event.preventDefault()} style={shellStyle}>",
     "      <header style={{ display: \"grid\", gap: 6 }}>",
     "        <h2 style={{ margin: 0, fontSize: state.titleSize, fontWeight: state.fontWeight }}>{state.title}</h2>",
     "        <p id={`${state.id}-description`} style={{ margin: 0, color: state.muted, fontSize: state.bodySize }}>{state.description}</p>",
